@@ -13,7 +13,7 @@ use syntax::abi;
 use types as il;
 use types::*;
 use clang as cx;
-use clang::{ast_dump, Cursor, Diagnostic, TranslationUnit, type_to_str};
+use clang::{ast_dump, Cursor, Diagnostic, TranslationUnit, type_to_str, kind_to_str};
 use clang::ll::*;
 
 use super::Logger;
@@ -250,7 +250,16 @@ fn conv_decl_ty(ctx: &mut ClangParserCtx, cursor: &Cursor) -> il::Type {
             let ti = decl.typeinfo();
             TNamed(ti)
         }
-        _ => TVoid
+        _ => {
+            let fail = ctx.options.fail_on_unknown_type;
+            log_err_warn(ctx,
+                format!("unsupported decl `{}` ({})",
+                    kind_to_str(cursor.kind()), cursor.location()
+                ).as_slice(),
+                fail
+            );
+            TVoid
+        }
     };
 }
 
