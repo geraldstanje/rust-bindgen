@@ -644,37 +644,44 @@ fn cunion_to_rs(ctx: &mut GenCtx, name: String, layout: Layout, members: Vec<Com
 fn cenum_to_rs(ctx: &mut GenCtx, name: String, kind: IKind, items: Vec<EnumItem>) -> Vec<P<ast::Item>> {
     use std::num::SignedInt;
 
-    let ty = TInt(kind, Layout::zero());
-    let ty_id = rust_type_id(ctx, name);
-    let ty_def = ctypedef_to_rs(ctx, ty_id, &ty);
-    let val_ty = cty_to_rs(ctx, &ty);
-    let mut def = ty_def;
+    let variants = items.iter().map(|it| {
+        let value_sign = ast::UnsuffixedIntLit(if it.val < 0 { ast::Minus } else { ast::Plus });
+        let value_node =
+            ast::ExprLit(P(respan(ctx.span, ast::LitInt(it.val.abs() as u64,
+                                                        value_sign))));
 
-    for it in items.iter() {
-        let int_lit = ast::LitInt(
-            it.val.abs() as u64,
-            ast::UnsuffixedIntLit(if it.val < 0 { ast::Minus } else { ast::Plus })
-        );
+        let variant = respan(ctx.span, ast::Variant_ {
+            name: ctx.ext_cx.ident_of(it.name.as_slice()),
+            attrs: vec!(),
+            kind: ast::TupleVariantKind(vec!()),
+            id: ast::DUMMY_NODE_ID,
+            disr_expr: Some(P(ast::Expr {
+                id: ast::DUMMY_NODE_ID,
+                node: value_node,
+                span: ctx.span
+            } )),
+            vis: ast::Inherited
+        });
+        P(variant)
+    }).collect();
 
-        let cst = ast::ItemConst(
-            P(val_ty.clone()),
-            ctx.ext_cx.expr_lit(ctx.span, int_lit)
-        );
-
-        let id = first(rust_id(ctx, it.name.clone()));
-        let val_def = P(ast::Item {
-                         ident: ctx.ext_cx.ident_of(id.as_slice()),
-                         attrs: Vec::new(),
-                         id: ast::DUMMY_NODE_ID,
-                         node: cst,
-                         vis: ast::Public,
-                         span: ctx.span
-                      });
-
-        def.push(val_def);
-    }
-
-    return def;
+    vec!(P(ast::Item {
+        ident: ctx.ext_cx.ident_of(name.as_slice()),
+        attrs: vec!(respan(ctx.span, ast::Attribute_ {
+            id: mk_attr_id(),
+            style: ast::AttrOuter,
+            value: P(respan(ctx.span, ast::MetaList(
+                to_intern_str(ctx, "repr".to_string()),
+                vec!(P(respan(ctx.span,
+                              ast::MetaWord(to_intern_str(ctx, "u32".to_string())))))
+            ))),
+            is_sugared_doc: false
+        })),
+        id: ast::DUMMY_NODE_ID,
+        node: ast::ItemEnum(ast::EnumDef { variants: variants }, empty_generics()),
+        vis: ast::Public,
+        span: ctx.span
+    }))
 }
 
 /// Generates accessors for fields in nested structs and unions which must be
