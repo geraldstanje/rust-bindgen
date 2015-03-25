@@ -101,6 +101,7 @@ fn decl_name(ctx: &mut ClangParserCtx, cursor: &Cursor) -> Global {
                     let ei = Rc::new(RefCell::new(EnumInfo::new(spelling, kind, vec!(), layout)));
                     GEnumDecl(ei)
                 }
+                CXCursor_ClassDecl |
                 CXCursor_TypedefDecl => {
                     let ti = Rc::new(RefCell::new(TypeInfo::new(spelling, TVoid)));
                     GType(ti)
@@ -245,6 +246,7 @@ fn conv_decl_ty(ctx: &mut ClangParserCtx, cursor: &Cursor) -> il::Type {
             let ei = decl.enuminfo();
             TEnum(ei)
         }
+        CXCursor_ClassDecl |
         CXCursor_TypedefDecl => {
             let decl = decl_name(ctx, cursor);
             let ti = decl.typeinfo();
