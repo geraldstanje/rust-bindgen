@@ -280,14 +280,16 @@ impl fmt::Debug for TypeInfo {
 #[derive(Clone)]
 pub struct VarInfo {
     pub name: String,
+    pub mangled: String,
     pub ty: Type,
     pub is_const: bool
 }
 
 impl VarInfo {
-    pub fn new(name: String, ty: Type) -> VarInfo {
+    pub fn new(name: String, mangled: String, ty: Type) -> VarInfo {
         VarInfo {
             name: name,
+            mangled: mangled,
             ty: ty,
             is_const: false
         }
