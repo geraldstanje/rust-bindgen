@@ -202,6 +202,12 @@ impl Type {
         }
     }
 
+    pub fn spelling(&self) -> String {
+        unsafe {
+            String_ { x: clang_getTypeSpelling(self.x) }.to_string()
+        }
+    }
+
     pub fn is_const(&self) -> bool {
         unsafe {
             clang_isConstQualifiedType(self.x) == 1
