@@ -709,7 +709,9 @@ fn cstruct_to_rs(ctx: &mut GenCtx, name: String, members: Vec<CompMember>, args:
                 span: ctx.span}));
     }
 
-    items.push(mk_default_impl(ctx, name.as_slice()));
+    if args.is_empty() {
+        items.push(mk_default_impl(ctx, name.as_slice()));
+    }
     items.extend(extra.into_iter());
     items
 }
