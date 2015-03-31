@@ -502,12 +502,14 @@ fn tag_dup_decl(gs: Vec<Global>) -> Vec<Global> {
           (&GVar(ref vi1), &GVar(ref vi2)) => {
               let a = vi1.borrow();
               let b = vi2.borrow();
-              check(a.name.as_slice(), b.name.as_slice())
+              check(a.name.as_slice(), b.name.as_slice()) &&
+              check(a.mangled.as_slice(), b.mangled.as_slice())
           },
           (&GFunc(ref vi1), &GFunc(ref vi2)) => {
               let a = vi1.borrow();
               let b = vi2.borrow();
-              check(a.name.as_slice(), b.name.as_slice())
+              check(a.name.as_slice(), b.name.as_slice()) &&
+              check(a.mangled.as_slice(), b.mangled.as_slice())
           },
           _ => false
         }
