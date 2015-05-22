@@ -2,13 +2,14 @@
 
 use libc::{c_uint, c_char, c_int, c_ulong};
 use std::{mem, ptr};
-use std::old_io as io;
+use std::io;
 use std::fmt;
 use std::str;
 use std::ffi;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::ffi::CString;
+use std::ffi::CStr;
 
 use clangll::*;
 
@@ -364,7 +365,7 @@ impl fmt::Display for String_ {
         unsafe {
             let c_str = clang_getCString(self.x) as *const c_char;
             let p = c_str as *const _;
-            str::from_utf8(ffi::c_str_to_bytes(&p)).unwrap().to_string().fmt(f)
+            f.write_str(&String::from_utf8_lossy(CStr::from_ptr(p).to_bytes()))
         }
     }
 }
@@ -400,13 +401,12 @@ pub struct TranslationUnit {
 impl TranslationUnit {
     pub fn parse(ix: &Index, file: &str, cmd_args: &[String],
                  unsaved: &[UnsavedFile], opts: usize) -> TranslationUnit {
-        let _fname = CString::from_slice(file.as_bytes());
-        let fname = _fname.as_ptr();
-        let _c_args: Vec<CString> = cmd_args.iter().map(|s| CString::from_slice(s.as_bytes())).collect();
+        let fname = CString::new(file).unwrap();
+        let _c_args: Vec<CString> = cmd_args.iter().map(|s| CString::new(s.clone()).unwrap()).collect();
         let c_args: Vec<*const c_char> = _c_args.iter().map(|s| s.as_ptr()).collect();
         let mut c_unsaved: Vec<Struct_CXUnsavedFile> = unsaved.iter().map(|f| f.x).collect();
         let tu = unsafe {
-            clang_parseTranslationUnit(ix.x, fname,
+            clang_parseTranslationUnit(ix.x, fname.as_ptr(),
                                        c_args.as_ptr(),
                                        c_args.len() as c_int,
                                        c_unsaved.as_mut_ptr(),
@@ -495,8 +495,8 @@ pub struct UnsavedFile {
 
 impl UnsavedFile {
     pub fn new(name: &str, contents: &str) -> UnsavedFile {
-        let name = CString::from_slice(name.as_bytes());
-        let contents = CString::from_slice(contents.as_bytes());
+        let name = CString::new(name).unwrap();
+        let contents = CString::new(contents).unwrap();
         let x = Struct_CXUnsavedFile {
             Filename: name.as_ptr(),
             Contents: contents.as_ptr(),
@@ -736,16 +736,16 @@ pub fn ast_dump(c: &Cursor, depth: isize)-> Enum_CXVisitorResult {
     fn print_indent(depth: isize, s: &str) {
         let mut i = 0;
         while i < depth {
-            io::print("\t");
+            print!("\t");
             i += 1;
         }
-        io::println(s);
+        println!("{}", s);
     }
     let ct = c.cur_type().kind();
-    print_indent(depth, format!("({} {} {}",
-        kind_to_str(c.kind()).as_slice(),
-        c.spelling().as_slice(),
-        type_to_str(ct)).as_slice()
+    print_indent(depth, &format!("({} {} {}",
+        kind_to_str(c.kind()),
+        c.spelling(),
+        type_to_str(ct))
     );
     c.visit(| s, _: &Cursor| {
         ast_dump(s, depth + 1)

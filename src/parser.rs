@@ -4,7 +4,6 @@
 use std::collections::{HashMap, HashSet};
 use std::collections::hash_map;
 use std::cell::RefCell;
-use std::iter::AdditiveIterator;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::path::Path;
@@ -52,7 +51,7 @@ fn match_pattern(ctx: &mut ClangParserCtx, cursor: &Cursor) -> bool {
     let name = file.name();
     let mut found = false;
     ctx.options.match_pat.iter().all(|pat| {
-        if name.as_slice().contains((*pat).as_slice()) {
+        if (&name).contains(pat) {
             found = true;
         }
         true
@@ -278,9 +277,9 @@ fn conv_decl_ty(ctx: &mut ClangParserCtx, ty: &cx::Type) -> il::Type {
         _ => {
             let fail = ctx.options.fail_on_unknown_type;
             log_err_warn(ctx,
-                format!("unsupported decl `{}` ({})",
+                &format!("unsupported decl `{}` ({})",
                     kind_to_str(ty_decl.kind()), ty_decl.location()
-                ).as_slice(),
+                ),
                 fail
             );
             TVoid
@@ -350,9 +349,9 @@ fn conv_ty(ctx: &mut ClangParserCtx, ty: &cx::Type, cursor: &Cursor) -> il::Type
         _ => {
             let fail = ctx.options.fail_on_unknown_type;
             log_err_warn(ctx,
-                format!("unsupported type `{}` ({})",
+                &format!("unsupported type `{}` ({})",
                     type_to_str(ty.kind()), cursor.location()
-                ).as_slice(),
+                ),
                 fail
             );
             TVoid
@@ -384,7 +383,8 @@ fn visit_composite(cursor: &Cursor, parent: &Cursor,
     fn is_bitfield_continuation(field: &il::FieldInfo, ty: &il::Type, width: u32) -> bool {
         match (&field.bitfields, ty) {
             (&Some(ref bitfields), &il::TInt(_, layout)) if *ty == field.ty => {
-                bitfields.iter().map(|&(_, w)| w).sum() + width <= (layout.size * 8) as u32
+                let iter = bitfields.iter().map(|&(_, w)| w);
+                iter.sum::<u32>() + width <= (layout.size * 8) as u32
             },
             _ => false
         }
@@ -413,7 +413,7 @@ fn visit_composite(cursor: &Cursor, parent: &Cursor,
                         _ => {
                             let msg = format!("Enums in bitfields are not supported ({}.{}).",
                                 cursor.spelling(), parent.spelling());
-                            ctx.logger.warn(msg.as_slice());
+                            ctx.logger.warn(&msg);
                         }
                     }
                     ("".to_string(), Some(vec!((cursor.spelling(), width))))
@@ -574,7 +574,7 @@ fn visit_top<'r>(cursor: &Cursor,
 
             let spelling = cursor.spelling();
             if spelling.len() > 8 &&
-               &(spelling.as_slice())[..8] == "operator" {
+               &(spelling)[..8] == "operator" {
                 return CXChildVisit_Continue;
             }
 
@@ -670,7 +670,7 @@ pub fn parse(options: ClangParserOptions, logger: &Logger) -> Result<Vec<Global>
     for d in diags.iter() {
         let msg = d.format(Diagnostic::default_opts());
         let is_err = d.severity() >= CXDiagnostic_Error;
-        log_err_warn(&mut ctx, msg.as_slice(), is_err);
+        log_err_warn(&mut ctx, &msg, is_err);
     }
 
     if ctx.err_count > 0 {
