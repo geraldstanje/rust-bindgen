@@ -182,17 +182,19 @@ pub struct CompInfo {
     pub filename: String,
     pub members: Vec<CompMember>,
     pub args: Vec<Type>,
+    pub methods: Vec<VarInfo>,
     pub layout: Layout,
 }
 
 impl CompInfo {
-    pub fn new(name: String, filename: String, kind: CompKind, members: Vec<CompMember>, args: Vec<Type>, layout: Layout) -> CompInfo {
+    pub fn new(name: String, filename: String, kind: CompKind, members: Vec<CompMember>, args: Vec<Type>, methods: Vec<VarInfo>, layout: Layout) -> CompInfo {
         CompInfo {
             kind: kind,
             name: name,
             filename: filename,
             members: members,
             args: args,
+            methods: methods,
             layout: layout,
         }
     }
@@ -284,12 +286,13 @@ impl fmt::Debug for TypeInfo {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct VarInfo {
     pub name: String,
     pub mangled: String,
     pub ty: Type,
-    pub is_const: bool
+    pub is_const: bool,
+    pub is_static: bool,
 }
 
 impl VarInfo {
@@ -298,7 +301,8 @@ impl VarInfo {
             name: name,
             mangled: mangled,
             ty: ty,
-            is_const: false
+            is_const: false,
+            is_static: false,
         }
     }
 }
