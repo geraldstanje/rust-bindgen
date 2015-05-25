@@ -35,6 +35,7 @@ pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_macro("bindgen", bgmacro::bindgen_macro);
 }
 
+#[derive(Debug)]
 pub struct BindgenOptions {
     pub match_pat: Vec<String>,
     pub builtins: bool,
@@ -59,7 +60,7 @@ impl Default for BindgenOptions {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum LinkType {
     Default,
     Static,
@@ -71,6 +72,7 @@ pub trait Logger {
     fn warn(&self, msg: &str);
 }
 
+#[derive(Debug)]
 pub struct Bindings
 {
     module: ast::Mod
