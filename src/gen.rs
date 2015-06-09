@@ -1,7 +1,6 @@
 #![allow(unused_must_use)]
 
 use std::cell::RefCell;
-use std::iter;
 use std::vec::Vec;
 use std::rc::Rc;
 use std::collections::HashMap;
@@ -212,6 +211,7 @@ fn gen_unmangle_func(ctx: &mut GenCtx, v: &VarInfo, counts: &mut HashMap<String,
         node: ast::ItemFn(
             P(fndecl),
             ast::Unsafety::Unsafe,
+            ast::Constness::NotConst,
             abi::C,
             empty_generics(),
             P(block)
@@ -285,6 +285,7 @@ fn gen_unmangle_method(ctx: &mut GenCtx,
         decl: P(fndecl),
         generics: empty_generics(),
         explicit_self: respan(ctx.span, explicit_self),
+        constness: ast::Constness::NotConst,
     };
 
     let block = ast::Block {
@@ -985,7 +986,7 @@ fn cstruct_to_rs(ctx: &mut GenCtx, name: String, ci: CompInfo) -> Vec<P<ast::Ite
     let mut unmangledlist = vec!();
     let mut unmangle_count: HashMap<String, isize> = HashMap::new();
     for v in methodlist {
-        let mut v = v.clone();
+        let v = v.clone();
         match v.ty {
             TFuncPtr(ref sig) => {
                 let name = v.mangled.clone();
@@ -1296,6 +1297,7 @@ fn gen_fullbitfield_method(ctx: &mut GenCtx, bindgen_name: &String,
             decl: P(fndecl),
             generics: empty_generics(),
             explicit_self: respan(ctx.span, ast::SelfStatic),
+            constness: ast::Constness::NotConst,
         }, P(block)
     );
 
